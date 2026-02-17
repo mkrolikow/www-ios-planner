@@ -1,0 +1,53 @@
+:root {
+  --bg:#0b0d12;
+  --card:#121622;
+  --text:#e8eefc;
+  --muted:#a7b2cc;
+  --line:#26304a;
+}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui;background:var(--bg);color:var(--text)}
+a{color:inherit}
+.page{padding:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;max-width:520px;margin:40px auto}
+.card.wide{max-width:1200px;margin:0 auto}
+.topbar{display:flex;align-items:center;gap:10px;max-width:1200px;margin:0 auto 12px auto}
+.brand{font-weight:700;font-size:18px}
+.spacer{flex:1}
+
+.input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0f1420;color:var(--text)}
+.label{font-size:12px;color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px}
+.col{flex:1}
+.checkbox{display:flex;gap:10px;align-items:center;color:var(--muted)}
+.error{padding:10px;border:1px solid #6b1a27;background:#2a0f16;border-radius:10px}
+
+.btn{padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0f1420;color:var(--text);cursor:pointer}
+.btn.primary{border-color:#2f6fec;background:#163063}
+.btn.danger{border-color:#c14556;background:#351118}
+
+.modalOverlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);
+  display:flex;align-items:center;justify-content:center;padding:18px;z-index:9999
+}
+.modalCard{
+  width:min(680px, 96vw);background:var(--card);border:1px solid var(--line);
+  border-radius:14px;overflow:hidden
+}
+.modalHeader{display:flex;align-items:center;gap:10px;padding:12px 12px;border-bottom:1px solid var(--line)}
+.modalTitle{font-weight:700}
+.modalBody{padding:12px}
+
+/* FullCalendar w dark mode */
+.fc {
+  --fc-border-color: var(--line);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: rgba(255,255,255,0.04);
+  --fc-today-bg-color: rgba(47,111,236,0.15);
+  --fc-event-text-color: #fff;
+}
+.fc .fc-toolbar-title{color:var(--text)}
+.fc .fc-button{background:#0f1420;border:1px solid var(--line);color:var(--text)}
+.fc .fc-button-primary:not(:disabled).fc-button-active{background:#163063;border-color:#2f6fec}
