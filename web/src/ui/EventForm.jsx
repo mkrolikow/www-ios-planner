@@ -1,15 +1,20 @@
 import React, { useMemo, useState } from "react";
 import TypePicker from "./TypePicker";
 
-function toLocalInputValue(date) {
-  // date: JS Date -> "YYYY-MM-DDTHH:mm"
-  const pad = (n) => String(n).padStart(2, "0");
-  const y = date.getFullYear();
-  const m = pad(date.getMonth() + 1);
-  const d = pad(date.getDate());
-  const hh = pad(date.getHours());
-  const mm = pad(date.getMinutes());
-  return `${y}-${m}-${d}T${hh}:${mm}`;
+function pad(n) { return String(n).padStart(2, "0"); }
+
+function toLocalDateInput(date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function toLocalDateTimeInput(date) {
+  return `${toLocalDateInput(date)}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function fromLocalDate(dateStr) {
+  // "YYYY-MM-DD" -> local Date at 00:00
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d, 0, 0, 0, 0);
 }
 
 export default function EventForm({ initial, types, onSubmit, onDelete }) {
@@ -18,13 +23,17 @@ export default function EventForm({ initial, types, onSubmit, onDelete }) {
     const start = initial?.start ? new Date(initial.start) : now;
     const end = initial?.end ? new Date(initial.end) : new Date(start.getTime() + 60 * 60 * 1000);
 
+    const allDay = !!initial?.allDay;
+
     return {
       title: initial?.title ?? "",
       notes: initial?.notes ?? "",
       typeId: initial?.typeId ?? null,
-      allDay: !!initial?.allDay,
-      startLocal: toLocalInputValue(start),
-      endLocal: toLocalInputValue(end),
+      allDay,
+      startDate: toLocalDateInput(start),
+      endDate: toLocalDateInput(end),
+      startLocal: toLocalDateTimeInput(start),
+      endLocal: toLocalDateTimeInput(end),
     };
   }, [initial]);
 
@@ -39,17 +48,29 @@ export default function EventForm({ initial, types, onSubmit, onDelete }) {
     e.preventDefault();
     setErr("");
 
-    if (!form.title.trim()) return setErr("Tytuł jest wymagany.");
-    const start = new Date(form.startLocal);
-    const end = new Date(form.endLocal);
+    const title = form.title.trim();
+    if (!title) return setErr("Tytuł jest wymagany.");
+
+    let start, end, allDay = !!form.allDay;
+
+    if (allDay) {
+      // FullCalendar najlepiej działa gdy end jest EXCLUSIVE (następny dzień 00:00)
+      start = fromLocalDate(form.startDate);
+      const endStart = fromLocalDate(form.endDate);
+      // end = dzień końca + 1 dzień (exclusive)
+      end = new Date(endStart.getTime() + 24 * 60 * 60 * 1000);
+    } else {
+      start = new Date(form.startLocal);
+      end = new Date(form.endLocal);
+    }
+
     if (!(start < end)) return setErr("Koniec musi być po początku.");
 
     await onSubmit({
-      title: form.title.trim(),
+      title,
       notes: form.notes,
       typeId: form.typeId,
-      allDay: form.allDay,
-      // wysyłamy ISO UTC
+      allDay,
       startAt: start.toISOString(),
       endAt: end.toISOString(),
     });
@@ -65,21 +86,34 @@ export default function EventForm({ initial, types, onSubmit, onDelete }) {
       <label className="label">Typ (kolor)</label>
       <TypePicker types={types} value={form.typeId} onChange={(v) => set("typeId", v)} />
 
-      <div className="row">
-        <div className="col">
-          <label className="label">Start</label>
-          <input className="input" type="datetime-local" value={form.startLocal} onChange={(e) => set("startLocal", e.target.value)} />
-        </div>
-        <div className="col">
-          <label className="label">Koniec</label>
-          <input className="input" type="datetime-local" value={form.endLocal} onChange={(e) => set("endLocal", e.target.value)} />
-        </div>
-      </div>
-
       <label className="checkbox">
         <input type="checkbox" checked={form.allDay} onChange={(e) => set("allDay", e.target.checked)} />
         Cały dzień
       </label>
+
+      {form.allDay ? (
+        <div className="row">
+          <div className="col">
+            <label className="label">Start (data)</label>
+            <input className="input" type="date" value={form.startDate} onChange={(e) => set("startDate", e.target.value)} />
+          </div>
+          <div className="col">
+            <label className="label">Koniec (data)</label>
+            <input className="input" type="date" value={form.endDate} onChange={(e) => set("endDate", e.target.value)} />
+          </div>
+        </div>
+      ) : (
+        <div className="row">
+          <div className="col">
+            <label className="label">Start</label>
+            <input className="input" type="datetime-local" value={form.startLocal} onChange={(e) => set("startLocal", e.target.value)} />
+          </div>
+          <div className="col">
+            <label className="label">Koniec</label>
+            <input className="input" type="datetime-local" value={form.endLocal} onChange={(e) => set("endLocal", e.target.value)} />
+          </div>
+        </div>
+      )}
 
       <label className="label">Notatki</label>
       <textarea className="input" rows={3} value={form.notes} onChange={(e) => set("notes", e.target.value)} />
