@@ -5,7 +5,7 @@ struct RootView: View {
 
     var body: some View {
         if auth.isLoggedIn {
-            MainCalendarScreen()
+            MainCalendarHost(auth: auth)
         } else {
             LoginScreen()
         }
