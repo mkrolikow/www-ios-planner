@@ -13,24 +13,38 @@ final class CalendarViewModel: ObservableObject {
     }
 
     func loadTypes() async {
+        // 4) offline cache: pokaż od razu cache
+        let cached = CacheStore.shared.loadTypes()
+        if !cached.isEmpty { self.types = cached }
+
         error = nil
         do {
             let access = try await auth.ensureAccessToken()
-            types = try await APIClient.shared.getTypes(accessToken: access)
+            let fresh = try await APIClient.shared.getTypes(accessToken: access)
+            self.types = fresh
+            CacheStore.shared.saveTypes(fresh)
         } catch {
+            // jeśli sieć padła, zostaje cache
             self.error = error.localizedDescription
         }
     }
 
     func loadEvents(from: Date, toExclusive: Date) async {
         error = nil
+
+        let fromStr = DateUtils.ymdUTC(from)
+        let toInclusive = Calendar.current.date(byAdding: .day, value: -1, to: toExclusive) ?? from
+        let toStr = DateUtils.ymdUTC(toInclusive)
+
+        // 4) offline cache: pokaż od razu cache dla zakresu
+        let cached = CacheStore.shared.loadEvents(from: fromStr, to: toStr)
+        if !cached.isEmpty { self.events = cached }
+
         do {
             let access = try await auth.ensureAccessToken()
-            let fromStr = DateUtils.ymdUTC(from)
-            // API ma "to" jako inclusive YYYY-MM-DD, więc bierzemy dzień przed exclusive:
-            let toInclusive = Calendar.current.date(byAdding: .day, value: -1, to: toExclusive) ?? from
-            let toStr = DateUtils.ymdUTC(toInclusive)
-            events = try await APIClient.shared.getEvents(accessToken: access, from: fromStr, to: toStr)
+            let fresh = try await APIClient.shared.getEvents(accessToken: access, from: fromStr, to: toStr)
+            self.events = fresh
+            CacheStore.shared.saveEvents(fresh, from: fromStr, to: toStr)
         } catch {
             self.error = error.localizedDescription
         }
@@ -41,9 +55,6 @@ final class CalendarViewModel: ObservableObject {
         do {
             let access = try await auth.ensureAccessToken()
             try await APIClient.shared.createEvent(accessToken: access, payload: payload)
-
-            // Po create: najprościej odświeżyć zakres widoku (caller to zrobi),
-            // a notyfikacje ustawimy na podstawie odświeżonej listy eventów.
         } catch {
             self.error = error.localizedDescription
         }
@@ -70,17 +81,11 @@ final class CalendarViewModel: ObservableObject {
         }
     }
 
-    // Po załadowaniu/zmianie eventów możesz zsynchronizować powiadomienia lokalne
     func syncNotificationsForLoadedEvents() {
         for e in events {
             guard let start = DateUtils.parseISO(e.startAt) else { continue }
             NotificationScheduler.shared.cancel(eventId: e.id)
             NotificationScheduler.shared.schedule15MinBefore(eventId: e.id, title: e.title, startDate: start)
         }
-    }
-
-    func typeColor(for typeId: Int?) -> String {
-        guard let id = typeId, let t = types.first(where: { $0.id == id }) else { return "#007AFF" }
-        return t.color_hex
     }
 }
