@@ -51,3 +51,29 @@ a{color:inherit}
 .fc .fc-toolbar-title{color:var(--text)}
 .fc .fc-button{background:#0f1420;border:1px solid var(--line);color:var(--text)}
 .fc .fc-button-primary:not(:disabled).fc-button-active{background:#163063;border-color:#2f6fec}
+
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+
+.chip{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 12px; border-radius:999px;
+  border:1px solid var(--line); background:#0f1420; color:var(--text);
+  cursor:pointer;
+}
+.chipActive{
+  border-color:#2f6fec;
+  background:#163063;
+}
+.swatch{
+  display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid rgba(255,255,255,.18);
+}
+
+.typeList{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.typeRow{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px;border:1px solid var(--line);border-radius:12px;background:#0f1420;
+}
+.typeLeft{display:flex;align-items:center;gap:10px}
+.typeName{font-weight:600}
+
